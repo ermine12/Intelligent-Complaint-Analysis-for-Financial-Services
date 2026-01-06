@@ -9,3 +9,7 @@ sentence-transformers
 faiss-cpu
 ipykernel
 jupyter
+transformers
+accelerate
+torch
+gradio

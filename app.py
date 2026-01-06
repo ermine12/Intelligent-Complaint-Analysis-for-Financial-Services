@@ -1,18 +1,15 @@
 
 import gradio as gr
 import os
-
-# Placeholder functions
-def retrieve_complaints(query):
-    return "This is a placeholder for retrieved complaints based on: " + query
-
-def generate_answer(query):
-    return "This is a placeholder for the generated answer."
+from src.rag_pipeline import rag_pipeline
 
 def rag_interface(query):
-    retrieved = retrieve_complaints(query)
-    answer = generate_answer(query)
-    return answer, retrieved
+    try:
+        answer, sources = rag_pipeline(query)
+        sources_text = "\n\n**Sources:**\n" + "\n".join([f"- {src[:200]}..." for src in sources])
+        return answer + sources_text
+    except Exception as e:
+        return f"Error: {str(e)}", ""
 
 # Check if data exists
 if not os.path.exists('vector_store'):
@@ -23,16 +20,14 @@ else:
 with gr.Blocks() as demo:
     gr.Markdown("# RAG Complaint Chatbot")
     gr.Markdown(warning_msg)
-    
-    with gr.Row():
-        with gr.Column():
-            query_input = gr.Textbox(label="Enter your query about financial products")
-            submit_btn = gr.Button("Submit")
-        with gr.Column():
-            answer_output = gr.Textbox(label="Answer")
-            retrieved_output = gr.Textbox(label="Retrieved Context")
-    
-    submit_btn.click(fn=rag_interface, inputs=query_input, outputs=[answer_output, retrieved_output])
+
+    query_input = gr.Textbox(label="Enter your query about financial products")
+    submit_btn = gr.Button("Submit")
+    answer_output = gr.Textbox(label="Answer and Sources", lines=10)
+    clear_btn = gr.Button("Clear")
+
+    submit_btn.click(fn=rag_interface, inputs=query_input, outputs=answer_output)
+    clear_btn.click(fn=lambda: ("", ""), inputs=[], outputs=[query_input, answer_output])
 
 if __name__ == "__main__":
     demo.launch()
